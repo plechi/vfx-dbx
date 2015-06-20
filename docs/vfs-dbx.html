@@ -1,0 +1,494 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type" />
+
+
+  
+  
+  <title>vfs-dbx</title>
+</head>
+
+
+
+<body>
+
+<ol id="mozToc">
+
+<!--mozToc h2 2 h3 3 h4 4 h5 5 h6 6--><li><a href="#mozTocId231248">What is vfs-dbx ?</a>
+    
+    <ol>
+
+      <li><a href="#mozTocId361243">Project page</a></li>
+
+      <li><a href="#mozTocId230065">Quickstart</a></li>
+
+      <li><a href="#mozTocId885777">Supported Capabilities</a></li>
+
+      <li><a href="#mozTocId274201">Authentication</a></li>
+
+      <li><a href="#mozTocId860275">Third party libraries</a></li>
+
+      <li><a href="#mozTocId12638">Change History</a></li>
+
+    
+    </ol>
+
+  </li>
+
+</ol>
+
+<br />
+
+<h2><a class="mozTocH2" name="mozTocId231248"></a>What is vfs-dbx ?</h2>
+
+vfs-dbx is a java library which enables one to access <a style="font-weight: bold;" href="http://www.dropbox.com">dropbox</a> files using the <a style="font-weight: bold;" href="http://commons.apache.org/proper/commons-vfs">apache commons vfs library</a>.<br />
+
+<br />
+
+<h2><a class="mozTocH2" name="mozTocId361243"></a>Project page</h2>
+
+
+
+
+The project is hosted on <a href="http://sourceforge.net/projects/vfs-dbx/">sourceforge</a>. Here you will find the latest downloads, &nbsp;<a href="http://sourceforge.net/p/vfs-dbx/tickets/">issue tracker</a> and <a href="http://sourceforge.net/p/vfs-dbx/discussion/">discussion board</a>. <br />
+
+
+
+
+<br />
+
+
+
+
+Please use the help discussion board for support.<br />
+
+
+
+
+Please use the <a href="http://sourceforge.net/p/vfs-dbx/discussion/general/">general discussion board</a> for sharing ideas or for general comments.<br />
+
+<br />
+
+<h2><a class="mozTocH2" name="mozTocId230065"></a>Quickstart</h2>
+
+
+
+
+1. Go to the <a href="https://www.dropbox.com/developers/apps">dropbox developer page</a>, create a new app, and copy the app key and secret.<br />
+
+2. Download the vfs-dbx project<br />
+
+3. In the vfs-dbx project folder edit the json file <span style="font-weight: bold;">app.auth</span>.<br />
+
+4. Enter the app key and secret into the file and save it.<br />
+
+5. Execute&nbsp;auth.bat or auth.sh<br />
+
+6. Invoke the displayed URL (link) in an internet browser<br />
+
+7. If required login to dropbox and click "Allow"<br />
+
+8. Enter the authorization code into the auth.bat application.<br />
+
+9 The application creates the file <span style="font-weight: bold;">token.auth</span> and terminates.<br />
+
+<br />
+
+
+
+
+<table style="text-align: left; width: 823px; height: 232px;" border="1" cellpadding="2" cellspacing="2">
+
+
+
+
+  <tbody>
+
+
+
+
+    <tr>
+
+
+
+
+      <td style="background-color: rgb(235, 235, 235);"><span style="font-style: italic;"><br />
+
+
+
+
+      </span>
+      
+      
+      
+      
+      <div style="margin-left: 40px;"><span style="font-weight: bold;">public class QuickStart</span><br style="font-weight: bold;" />
+
+
+
+
+      <span style="font-weight: bold;">{</span><br style="font-weight: bold;" />
+
+
+
+
+      <span style="font-weight: bold;">&nbsp;&nbsp;&nbsp; public static void main(String[] args) throws Exception</span><br style="font-weight: bold;" />
+
+
+
+
+      <span style="font-weight: bold;">&nbsp;&nbsp;&nbsp; {</span><br style="font-weight: bold;" />
+
+
+
+
+      <span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;
+((DefaultFileSystemManager)VFS.getManager()).addProvider("dbx", new
+DropboxFileProvider()); &nbsp; &nbsp; &nbsp; &nbsp;(1)<br />
+
+&nbsp; &nbsp; &nbsp; &nbsp; FileObject fo =
+VFS.getManager().resolveFile("dbx:/"); &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(2)<br />
+
+&nbsp; &nbsp; &nbsp; &nbsp; System.out.println("found root file: "+fo);<br />
+
+&nbsp; &nbsp; &nbsp;}<br style="font-weight: bold;" />
+
+      </span>
+
+
+      <span style="font-weight: bold;">}</span><br />
+
+
+
+
+      <span style="font-style: italic;"></span></div>
+
+
+
+
+      <br />
+
+
+
+
+      </td>
+
+
+
+
+    </tr>
+
+
+
+
+  
+  
+  
+  
+  </tbody>
+</table>
+
+
+
+
+<br />
+
+
+
+
+(1) define "dbx" as dropbox URL schema<br />
+
+
+
+
+
+
+
+<br />
+
+
+
+
+(2) invoke vfs methods<br />
+
+
+
+
+<br />
+
+
+
+
+The above program will print the root folder of your application.<br />
+
+
+
+<br />
+
+<h2><a class="mozTocH2" name="mozTocId885777"></a>Supported Capabilities</h2>
+
+<table style="width: 755px; height: 56px;" class="bodyTable table table-striped table-bordered" border="2" cellpadding="2" cellspacing="2">
+
+  <tbody>
+
+    <tr class="a">
+
+      <th>File System</th>
+
+
+              
+      <th>Directory Contents</th>
+
+
+              
+      <th>Authentication</th>
+
+
+              
+      <th>Read</th>
+
+
+              
+      <th>Write</th>
+
+
+              
+      <th>Create/Delete</th>
+
+
+              
+      <th>Random</th>
+
+
+              
+      <th>Version</th>
+
+
+              
+      <th>Rename</th>
+
+      <td align="undefined" valign="undefined"><span style="font-weight: bold;">Append</span></td>
+
+
+            </tr>
+
+
+            
+    <tr class="b">
+
+
+              
+      <td>dbx</td>
+
+
+              
+      <td>Yes</td>
+
+
+              
+      <td>Yes</td>
+
+
+              
+      <td>Yes</td>
+
+
+              
+      <td>Yes</td>
+
+
+              
+      <td>Yes</td>
+
+
+              
+      <td>No</td>
+
+
+              
+      <td>No</td>
+
+
+              
+      <td>Yes</td>
+
+      <td align="undefined" valign="undefined">&nbsp; No&nbsp; </td>
+
+    </tr>
+
+  
+  </tbody>
+</table>
+
+<br />
+
+Other capabilities may be added in the future.<br />
+
+<br />
+
+<h2><a class="mozTocH2" name="mozTocId274201"></a>Authentication</h2>
+
+Per default authentification is done through files:<br />
+
+<br />
+
+The authenticator first searches for the file <span style="font-weight: bold;">token.auth</span> and tries to authenticate using this file. <br />
+
+If the file does not exist or if the authentification fails the authenticator searches for the file <span style="font-weight: bold;">app.auth</span>. <br />
+
+The user is displayed the authentication URL and asked to provide the authentication code.<br />
+
+The code is stored in the file token.auth.<br />
+
+<br />
+
+Per default the files are stored in the working dir of the application.<br />
+
+The java system properties <span style="font-weight: bold;">vfs.dbx.app.auth</span>, <span style="font-weight: bold;">vfs.dbx.token.auth</span> allow to override the default file names.<br />
+
+<br />
+
+The authentication can also be done programmatically:<br />
+
+<br />
+
+<br />
+
+
+
+
+<table style="text-align: left; width: 823px; height: 232px;" border="1" cellpadding="2" cellspacing="2">
+
+
+
+
+  <tbody>
+
+
+
+
+    <tr>
+
+
+
+
+      <td style="background-color: rgb(235, 235, 235);"><span style="font-style: italic;"><br />
+
+
+
+
+      </span>
+      
+      
+      
+      
+      <div style="margin-left: 40px;"><span style="font-weight: bold;">public class AuthenticationExample<br />
+
+{<br />
+
+&nbsp;&nbsp;&nbsp; public static void main(String[] args) throws Exception<br />
+
+&nbsp;&nbsp;&nbsp; {<br />
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; DropboxAuthenticator auth = new DropboxAuthenticator("accessToken"); &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(1)<br />
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; FileSystemOptions opts = new FileSystemOptions(); <br />
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(opts,
+auth); &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; <br />
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+((DefaultFileSystemManager)VFS.getManager()).addProvider("dbx", new
+DropboxFileProvider()); &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (2)<br />
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; FileObject fo =
+VFS.getManager().resolveFile("dbx:/", opts); &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(3)<br />
+
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; System.out.println("root folder "+fo);<br />
+
+&nbsp;&nbsp;&nbsp; }<br />
+
+}<br />
+
+      </span><br />
+
+
+
+
+      <span style="font-style: italic;"></span></div>
+
+
+
+
+      <br />
+
+
+
+
+      </td>
+
+
+
+
+    </tr>
+
+
+
+
+  
+  
+  
+  
+  </tbody>
+</table>
+
+<br />
+
+(1) create an authenticator given an access token (or application key and secret)<br />
+
+(2) associate the dbx schema with the dropbox file provider<br />
+
+(3) invoke vfs methods using the authenticator<br />
+
+<br />
+
+<h2><a class="mozTocH2" name="mozTocId860275"></a>Third party libraries</h2>
+
+<ul>
+
+  <li><a href="http://commons.apache.org/proper/commons-vfs/">commons vfs 2.0 [APACHE]</a></li>
+
+  <li><a href="https://github.com/dropbox/dropbox-sdk-java">core dropbox java sdk [MIT]</a></li>
+
+</ul>
+
+
+
+<br />
+
+
+
+<h2><a class="mozTocH2" name="mozTocId12638"></a>Change History</h2>
+
+
+
+<a href="changes.html">can be found here</a><br />
+
+</body>
+</html>
