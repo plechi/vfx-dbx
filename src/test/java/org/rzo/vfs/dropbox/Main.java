@@ -1,4 +1,5 @@
-package test;
+
+package org.rzo.vfs.dropbox;
 
 import java.io.InputStream;
 import java.util.Scanner;
