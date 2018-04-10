@@ -19,10 +19,11 @@ package org.rzo.vfs.dropbox;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
+import com.dropbox.core.v2.files.Metadata;
 import org.apache.commons.vfs2.FileSystemException;
 
-import com.dropbox.core.DbxEntry;
 import com.dropbox.core.DbxException;
 
 /**
@@ -30,11 +31,13 @@ import com.dropbox.core.DbxException;
  */
 public interface DropboxClient
 {
+    String CLIENT_IDENTIFIER = "apache-commons-vfs-dbx/0.1";
+
     boolean isConnected() throws FileSystemException, DbxException;
 
     void disconnect() throws IOException;
 
-    DbxEntry[] listFiles(String relPath) throws IOException;
+    List<Metadata> listFiles(String relPath) throws IOException, DbxException;
 
     boolean removeDirectory(String relPath) throws IOException;
 
@@ -46,13 +49,12 @@ public interface DropboxClient
 
     InputStream retrieveFileStream(String relPath) throws IOException;
 
-    OutputStream storeFileStream(String relPath) throws IOException;
+    OutputStream storeFileStream(String relPath, boolean append) throws IOException;
 
     boolean abort() throws IOException;
     
     long getLastModifiedTime(String path)  throws IOException;
 
-    
     long getContentSize(String path)  throws IOException;
 
 

@@ -16,63 +16,53 @@
  */
 package org.rzo.vfs.dropbox;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-
+import com.dropbox.core.DbxException;
+import com.dropbox.core.v2.files.FileMetadata;
+import com.dropbox.core.v2.files.FolderMetadata;
+import com.dropbox.core.v2.files.Metadata;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.vfs2.FileName;
-import org.apache.commons.vfs2.FileNotFolderException;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileType;
-import org.apache.commons.vfs2.RandomAccessContent;
+import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.provider.AbstractFileName;
 import org.apache.commons.vfs2.provider.AbstractFileObject;
 import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.commons.vfs2.util.FileObjectUtils;
 import org.apache.commons.vfs2.util.Messages;
-import org.apache.commons.vfs2.util.MonitorInputStream;
-import org.apache.commons.vfs2.util.MonitorOutputStream;
-import org.apache.commons.vfs2.util.RandomAccessMode;
 
-import com.dropbox.core.DbxEntry;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * An dbx file.
- *
  */
-public class DropboxFileObject extends AbstractFileObject
-{
-    private static final Map<String, DbxEntry> EMPTY_DBX_FILE_MAP =
-        Collections.unmodifiableMap(new TreeMap<String, DbxEntry>());
-    private static final DbxEntry UNKNOWN = new DbxEntry.Folder("/", "",  false) ;
+public class DropboxFileObject extends AbstractFileObject {
+    private static final Map<String, Metadata> EMPTY_DBX_FILE_MAP =
+            Collections.unmodifiableMap(new TreeMap<String, Metadata>());
+    private static final Metadata UNKNOWN = Metadata.newBuilder("").build();
 
     private final Log log = LogFactory.getLog(DropboxFileObject.class);
     private final DropboxFileSystem dbxFs;
     private final String relPath;
 
     // Cached info
-    private DbxEntry fileInfo;
-    private Map<String, DbxEntry> children;
+    private Metadata fileInfo;
+    private Map<String, Metadata> children;
     private FileObject linkDestination;
 
     private boolean inRefresh;
 
     protected DropboxFileObject(final AbstractFileName name,
-                            final DropboxFileSystem fileSystem,
-                            final FileName rootName)
-        throws FileSystemException
-    {
+                                final DropboxFileSystem fileSystem,
+                                final FileName rootName)
+            throws FileSystemException {
         super(name, fileSystem);
-       // System.out.println("file "+name+" root "+rootName);
+        // System.out.println("file "+name+" root "+rootName);
         dbxFs = fileSystem;
         String relPath = UriParser.decode(rootName.getRelativeName(name));
         {
@@ -86,15 +76,13 @@ public class DropboxFileObject extends AbstractFileObject
      * @param name  the filename in its native form ie. without uri stuff (%nn)
      * @param flush recreate children cache
      */
-    private DbxEntry getChildFile(final String name, final boolean flush) throws IOException
-    {
+    private Metadata getChildFile(final String name, final boolean flush) throws IOException {
         /* If we should flush cached children, clear our children map unless
-                 * we're in the middle of a refresh in which case we've just recently
-                 * refreshed our children. No need to do it again when our children are
-                 * refresh()ed, calling getChildFile() for themselves from within
-                 * getInfo(). See getChildren(). */
-        if (flush && !inRefresh)
-        {
+         * we're in the middle of a refresh in which case we've just recently
+         * refreshed our children. No need to do it again when our children are
+         * refresh()ed, calling getChildFile() for themselves from within
+         * getInfo(). See getChildren(). */
+        if (flush && !inRefresh) {
             children = null;
         }
 
@@ -102,65 +90,55 @@ public class DropboxFileObject extends AbstractFileObject
         doGetChildren();
 
         // VFS-210
-        if (children == null)
-        {
+        if (children == null) {
             return null;
         }
 
         // Look for the requested child
-        DbxEntry DbxEntry = children.get(name);
+        Metadata DbxEntry = children.get(name);
         return DbxEntry;
     }
 
     /**
      * Fetches the children of this file, if not already cached.
      */
-    private void doGetChildren() throws IOException
-    {
-        if (children != null)
-        {
+    private void doGetChildren() throws IOException {
+        if (children != null) {
             return;
         }
 
         final DropboxClient client = dbxFs.getClient();
-        try
-        {
+        try {
             final String path = relPath;
-            final DbxEntry[] tmpChildren = client.listFiles(getAbsPath());
-            if (tmpChildren == null || tmpChildren.length == 0)
-            {
+            final List<Metadata> tmpChildren = client.listFiles(getAbsPath());
+            if (tmpChildren == null || tmpChildren.isEmpty()) {
                 children = EMPTY_DBX_FILE_MAP;
-            }
-            else
-            {
-                children = new TreeMap<String, DbxEntry>();
+            } else {
+                children = new TreeMap<String, Metadata>();
 
                 // Remove '.' and '..' elements
-                for (int i = 0; i < tmpChildren.length; i++)
-                {
-                    final DbxEntry child = tmpChildren[i];
-                    if (child == null)
-                    {
-                        if (log.isDebugEnabled())
-                        {
-                            log.debug(Messages.getString("vfs.provider.dbx/invalid-directory-entry.debug",
-                                new Object[]
-                                    {
-                                        new Integer(i), relPath
-                                    }));
+
+                int i = 0;
+                for (Metadata child : tmpChildren) {
+                    if (child == null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug(Messages.getString("vfs.provider.dbx/invalid-directory-entry.debug", new Integer(i), relPath));
                         }
                         continue;
                     }
-                    if (!".".equals(child.name)
-                        && !"..".equals(child.name))
-                    {
-                        children.put(child.name, child);
+                    if (!".".equals(child.getName())
+                            && !"..".equals(child.getName())) {
+                        children.put(child.getName(), child);
                     }
+
+                    i++;
                 }
+
+
             }
-        }
-        finally
-        {
+        } catch (DbxException e) {
+            throw new IOException(e);
+        } finally {
             dbxFs.putClient(client);
         }
     }
@@ -169,9 +147,7 @@ public class DropboxFileObject extends AbstractFileObject
      * Attaches this file object to its file resource.
      */
     @Override
-    protected void doAttach()
-        throws IOException
-    {
+    protected void doAttach() {
         // Get the parent folder to find the info for this file
         // VFS-210 getInfo(false);
     }
@@ -179,26 +155,20 @@ public class DropboxFileObject extends AbstractFileObject
     /**
      * Fetches the info for this file.
      */
-    private void getInfo(boolean flush) throws IOException
-    {
+    private void getInfo(boolean flush) throws IOException {
         final DropboxFileObject parent = (DropboxFileObject) FileObjectUtils.getAbstractFileObject(getParent());
-        DbxEntry newFileInfo;
-        if (parent != null)
-        {
+        Metadata newFileInfo;
+        if (parent != null) {
             newFileInfo = parent.getChildFile(UriParser.decode(getName().getBaseName()), flush);
-        }
-        else
-        {
+        } else {
             // Assume the root is a directory and exists
-            newFileInfo = new DbxEntry.Folder("/", "",  false) ;
+            //FIXME: what to do here?
+            newFileInfo = FolderMetadata.newBuilder("", "root").build();
         }
 
-        if (newFileInfo == null)
-        {
+        if (newFileInfo == null) {
             this.fileInfo = UNKNOWN;
-        }
-        else
-        {
+        } else {
             this.fileInfo = newFileInfo;
         }
     }
@@ -207,17 +177,13 @@ public class DropboxFileObject extends AbstractFileObject
      * @throws FileSystemException if an error occurs.
      */
     @Override
-    public void refresh() throws FileSystemException
-    {
-        if (!inRefresh)
-        {
-            try
-            {
+    public void refresh() throws FileSystemException {
+        if (!inRefresh) {
+            try {
                 inRefresh = true;
                 super.refresh();
 
-                synchronized (getFileSystem())
-                {
+                synchronized (getFileSystem()) {
                     this.fileInfo = null;
                 }
 
@@ -232,9 +198,7 @@ public class DropboxFileObject extends AbstractFileObject
                     throw new FileSystemException(e);
                 }
                 */
-            }
-            finally
-            {
+            } finally {
                 inRefresh = false;
             }
         }
@@ -244,10 +208,8 @@ public class DropboxFileObject extends AbstractFileObject
      * Detaches this file object from its file resource.
      */
     @Override
-    protected void doDetach()
-    {
-        synchronized (getFileSystem())
-        {
+    protected void doDetach() {
+        synchronized (getFileSystem()) {
             this.fileInfo = null;
             children = null;
         }
@@ -257,21 +219,14 @@ public class DropboxFileObject extends AbstractFileObject
      * Called when the children of this file change.
      */
     @Override
-    protected void onChildrenChanged(FileName child, FileType newType)
-    {
-        if (children != null && newType.equals(FileType.IMAGINARY))
-        {
-            try
-            {
+    protected void onChildrenChanged(FileName child, FileType newType) {
+        if (children != null && newType.equals(FileType.IMAGINARY)) {
+            try {
                 children.remove(UriParser.decode(child.getBaseName()));
-            }
-            catch (FileSystemException e)
-            {
+            } catch (FileSystemException e) {
                 throw new RuntimeException(e.getMessage());
             }
-        }
-        else
-        {
+        } else {
             // if child was added we have to rescan the children
             // TODO - get rid of this
             children = null;
@@ -282,15 +237,12 @@ public class DropboxFileObject extends AbstractFileObject
      * Called when the type or content of this file changes.
      */
     @Override
-    protected void onChange() throws IOException
-    {
+    protected void onChange() throws IOException {
         children = null;
 
-        if (getType().equals(FileType.IMAGINARY))
-        {
+        if (getType().equals(FileType.IMAGINARY)) {
             // file is deleted, avoid server lookup
-            synchronized (getFileSystem())
-            {
+            synchronized (getFileSystem()) {
                 this.fileInfo = UNKNOWN;
             }
             return;
@@ -305,45 +257,35 @@ public class DropboxFileObject extends AbstractFileObject
      */
     @Override
     protected FileType doGetType()
-        throws Exception
-    {
+            throws Exception {
         // VFS-210
-        synchronized (getFileSystem())
-        {
-            if (this.fileInfo == null)
-            {
+        synchronized (getFileSystem()) {
+            if (this.fileInfo == null) {
                 getInfo(false);
             }
 
-            if (this.fileInfo == UNKNOWN)
-            {
+            if (this.fileInfo == UNKNOWN) {
                 return FileType.IMAGINARY;
-            }
-            else if (this.fileInfo.isFolder())
-            {
+            } else if (this.fileInfo instanceof FolderMetadata) {
                 return FileType.FOLDER;
-            }
-            else if (this.fileInfo.isFile())
-            {
+            } else if (this.fileInfo instanceof FileMetadata) {
                 return FileType.FILE;
             }
-         }
+        }
 
         throw new FileSystemException("vfs.provider.dbx/get-type.error", getName());
     }
 
     @Override
-    protected FileObject[] doListChildrenResolved() throws Exception
-    {
+    protected FileObject[] doListChildrenResolved() throws Exception {
         doGetChildren();
         if (children == null)
-        	return null;
-        FileObject[] result =  new FileObject[children.size()];
+            return null;
+        FileObject[] result = new FileObject[children.size()];
         int i = 0;
-        for (DbxEntry entry : children.values())
-        {
-        	result[i] = dbxFs.resolveFile(entry.path);
-        	i++;
+        for (Metadata entry : children.values()) {
+            result[i] = dbxFs.resolveFile(entry.getPathDisplay());
+            i++;
         }
         return result;
     }
@@ -357,23 +299,17 @@ public class DropboxFileObject extends AbstractFileObject
      * @since 2.0
      */
     @Override
-    public FileObject[] getChildren() throws FileSystemException
-    {
-        try
-        {
-            if (doGetType() != FileType.FOLDER)
-            {
+    public FileObject[] getChildren() throws FileSystemException {
+        try {
+            if (doGetType() != FileType.FOLDER) {
                 throw new FileNotFolderException(getName());
             }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             throw new FileNotFolderException(getName(), ex);
         }
 
 
-        try
-        {
+        try {
             /* Wrap our parent implementation, noting that we're refreshing so
              * that we don't refresh() ourselves and each of our parents for
              * each children. Note that refresh() will list children. Meaning,
@@ -383,9 +319,7 @@ public class DropboxFileObject extends AbstractFileObject
 
             this.inRefresh = true;
             return super.getChildren();
-        }
-        finally
-        {
+        } finally {
             this.inRefresh = false;
         }
     }
@@ -395,26 +329,21 @@ public class DropboxFileObject extends AbstractFileObject
      */
     @Override
     protected String[] doListChildren()
-        throws Exception
-    {
+            throws Exception {
         // List the children of this file
         doGetChildren();
 
         // VFS-210
-        if (children == null)
-        {
+        if (children == null) {
             return null;
         }
 
         // TODO - get rid of this children stuff
         final String[] childNames = new String[children.size()];
         int childNum = -1;
-        Iterator<DbxEntry> iterChildren = children.values().iterator();
-        while (iterChildren.hasNext())
-        {
+        for (Metadata child : children.values()) {
             childNum++;
-            final DbxEntry child = iterChildren.next();
-            childNames[childNum] = child.name;
+            childNames[childNum] = child.getName();
         }
 
         return UriParser.encode(childNames);
@@ -424,30 +353,21 @@ public class DropboxFileObject extends AbstractFileObject
      * Deletes the file.
      */
     @Override
-    protected void doDelete() throws Exception
-    {
-        synchronized (getFileSystem())
-        {
+    protected void doDelete() throws Exception {
+        synchronized (getFileSystem()) {
             final boolean ok;
             final DropboxClient dbxClient = dbxFs.getClient();
-            try
-            {
-                if (this.fileInfo.isFolder())
-                {
+            try {
+                if (this.fileInfo instanceof FolderMetadata) {
                     ok = dbxClient.removeDirectory(getAbsPath());
-                }
-                else
-                {
+                } else {
                     ok = dbxClient.deleteFile(getAbsPath());
                 }
-            }
-            finally
-            {
+            } finally {
                 dbxFs.putClient(dbxClient);
             }
 
-            if (!ok)
-            {
+            if (!ok) {
                 throw new FileSystemException("vfs.provider.dbx/delete-file.error", getName());
             }
             this.fileInfo = null;
@@ -459,27 +379,21 @@ public class DropboxFileObject extends AbstractFileObject
      * Renames the file
      */
     @Override
-    protected void doRename(FileObject newfile) throws Exception
-    {
-        synchronized (getFileSystem())
-        {
+    protected void doRename(FileObject newfile) throws Exception {
+        synchronized (getFileSystem()) {
             final boolean ok;
             final DropboxClient dbxClient = dbxFs.getClient();
-            try
-            {
+            try {
                 String oldName = getName().getPath();
                 String newName = newfile.getName().getPath();
                 ok = dbxClient.rename(oldName, newName);
-            }
-            finally
-            {
+            } finally {
                 dbxFs.putClient(dbxClient);
             }
 
-            if (!ok)
-            {
+            if (!ok) {
                 throw new FileSystemException("vfs.provider.dbx/rename-file.error",
-                        new Object[]{getName().toString(), newfile});
+                        getName().toString(), newfile);
             }
             this.fileInfo = null;
             children = EMPTY_DBX_FILE_MAP;
@@ -491,21 +405,16 @@ public class DropboxFileObject extends AbstractFileObject
      */
     @Override
     protected void doCreateFolder()
-        throws Exception
-    {
+            throws Exception {
         final boolean ok;
         final DropboxClient client = dbxFs.getClient();
-        try
-        {
+        try {
             ok = client.makeDirectory(getAbsPath());
-        }
-        finally
-        {
+        } finally {
             dbxFs.putClient(client);
         }
 
-        if (!ok)
-        {
+        if (!ok) {
             throw new FileSystemException("vfs.provider.dbx/create-folder.error", getName());
         }
     }
@@ -514,13 +423,12 @@ public class DropboxFileObject extends AbstractFileObject
      * Returns the size of the file content (in bytes).
      */
     @Override
-    protected long doGetContentSize() throws Exception
-    {
-        synchronized (getFileSystem())
-        {
-        	if (this.fileInfo.isFile())
-                 return this.fileInfo.asFile().numBytes;
-        	return this.fileInfo.asFolder().numBytes;
+    protected long doGetContentSize() {
+        synchronized (getFileSystem()) {
+            if (this.fileInfo instanceof FileMetadata)
+                return ((FileMetadata) this.fileInfo).getSize();
+            //TODO: find way for file modified
+            return 0;
         }
     }
 
@@ -530,15 +438,12 @@ public class DropboxFileObject extends AbstractFileObject
      * @see org.apache.commons.vfs2.provider.AbstractFileObject#doGetLastModifiedTime()
      */
     @Override
-    protected long doGetLastModifiedTime() throws Exception
-    {
-        synchronized (getFileSystem())
-        {
+    protected long doGetLastModifiedTime() {
+        synchronized (getFileSystem()) {
             {
-                if (this.fileInfo.isFile())
-                	return this.fileInfo.asFile().lastModified.getTime();
-                if (this.fileInfo.asFolder().lastModified != null)
-                	return this.fileInfo.asFolder().lastModified.getTime();
+                if (this.fileInfo instanceof FileMetadata)
+                    return ((FileMetadata) this.fileInfo).getClientModified().getTime();
+                //TODO: find way for folder modified?
                 return 0;
             }
         }
@@ -548,21 +453,16 @@ public class DropboxFileObject extends AbstractFileObject
      * Creates an input stream to read the file content from.
      */
     @Override
-    protected InputStream doGetInputStream() throws Exception
-    {
+    protected InputStream doGetInputStream() throws Exception {
         final DropboxClient client = dbxFs.getClient();
-        try
-        {
+        try {
             final InputStream instr = client.retrieveFileStream(getAbsPath());
             // VFS-210
-            if (instr == null)
-            {
+            if (instr == null) {
                 throw new FileNotFoundException(getName().toString());
             }
             return instr;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             dbxFs.putClient(client);
             throw e;
         }
@@ -574,46 +474,35 @@ public class DropboxFileObject extends AbstractFileObject
      */
     @Override
     protected OutputStream doGetOutputStream(boolean bAppend)
-        throws Exception
-    {
+            throws Exception {
         final DropboxClient client = dbxFs.getClient();
-        try
-        {
-            OutputStream out = null;
-            if (bAppend)
-            {
-                //out = client.appendFileStream(relPath);
-            }
-            else
-            {
-                out = client.storeFileStream(getAbsPath());
-            }
+        try {
+            OutputStream out = client.storeFileStream(getAbsPath(), bAppend);
 
-            if (out == null)
-            {
+            if (out == null) {
                 throw new FileSystemException("vfs.provider.dbx/output-error.debug", new Object[]
-                    {
-                        this.getName(),
-                    });
+                        {
+                                this.getName(),
+                        });
             }
 
             return out;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             dbxFs.putClient(client);
             throw e;
         }
     }
 
-    String getRelPath()
-    {
+    String getRelPath() {
         return relPath;
     }
-    
-    String getAbsPath()
-    {
-        return super.getName().getPath();
+
+    String getAbsPath() {
+        String absPath = super.getName().getPath();
+        if (!"/".equals(absPath))
+            return absPath;
+        else
+            return "";
     }
 
 

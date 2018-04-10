@@ -16,62 +16,47 @@
  */
 package org.rzo.vfs.dropbox;
 
+import org.apache.commons.vfs2.*;
+import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
+import org.apache.commons.vfs2.provider.AbstractOriginatingFileProvider;
+import org.apache.commons.vfs2.provider.local.LocalFileName;
+import org.rzo.vfs.dropbox.auth.DropboxAuthenticator;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.apache.commons.vfs2.Capability;
-import org.apache.commons.vfs2.FileName;
-import org.apache.commons.vfs2.FileSystem;
-import org.apache.commons.vfs2.FileSystemConfigBuilder;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileSystemOptions;
-import org.apache.commons.vfs2.UserAuthenticationData;
-import org.apache.commons.vfs2.UserAuthenticator;
-import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
-import org.apache.commons.vfs2.provider.AbstractOriginatingFileProvider;
-import org.apache.commons.vfs2.provider.GenericFileName;
-import org.apache.commons.vfs2.provider.local.LocalFileName;
-import org.rzo.vfs.dropbox.auth.DropboxAuthenticator;
-
 /**
  * A provider for dbx file systems.
- *
  */
-public class DropboxFileProvider
-    extends AbstractOriginatingFileProvider
-{
-    /**
-     * File Entry Parser.
-     */
-    public static final String ATTR_FILE_ENTRY_PARSER = "FEP";
+public class DropboxFileProvider extends AbstractOriginatingFileProvider {
 
     /**
      * Authenticator types.
      */
     public static final UserAuthenticationData.Type[] AUTHENTICATOR_TYPES = new UserAuthenticationData.Type[]
-        {
-            UserAuthenticationData.USERNAME, UserAuthenticationData.PASSWORD
-        };
+            {
+                    UserAuthenticationData.USERNAME, UserAuthenticationData.PASSWORD
+            };
 
     static final Collection<Capability> capabilities = Collections.unmodifiableCollection(Arrays.asList(new Capability[]
-    {
-        Capability.CREATE,
-        Capability.DELETE,
-        Capability.RENAME,
-        Capability.GET_TYPE,
-        Capability.LIST_CHILDREN,
-        Capability.READ_CONTENT,
-        Capability.GET_LAST_MODIFIED,
-        Capability.WRITE_CONTENT,
-    }));
-    
+            {
+                    Capability.CREATE,
+                    Capability.DELETE,
+                    Capability.RENAME,
+                    Capability.GET_TYPE,
+                    Capability.LIST_CHILDREN,
+                    Capability.READ_CONTENT,
+                    Capability.GET_LAST_MODIFIED,
+                    Capability.WRITE_CONTENT,
+                    //Capability.APPEND_CONTENT //appending actually does not work yet
+            }));
+
     public static final FileSystemOptions DEFAULT_OPTIONS = new FileSystemOptions();
 
-    public DropboxFileProvider()
-    {
+    public DropboxFileProvider() {
         super();
-       
+
     }
 
     /**
@@ -79,20 +64,14 @@ public class DropboxFileProvider
      */
     @Override
     protected FileSystem doCreateFileSystem(final FileName name, FileSystemOptions fileSystemOptions)
-        throws FileSystemException
-    {
+            throws FileSystemException {
         // Create the file system
         final LocalFileName rootName = (LocalFileName) name;
-        
-        if (fileSystemOptions == null)
-        {
-        	fileSystemOptions = DEFAULT_OPTIONS;
+
+        if (fileSystemOptions == null) {
+            fileSystemOptions = DEFAULT_OPTIONS;
         }
-        if  (DefaultFileSystemConfigBuilder.getInstance().getUserAuthenticator(fileSystemOptions) == null)
-        {
-        	UserAuthenticator auth = new DropboxAuthenticator();
-        	DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(fileSystemOptions, auth); 
-        }
+
 
         DropboxClientWrapper dbxClient = new DropboxClientWrapper(rootName, fileSystemOptions);
 
@@ -100,13 +79,11 @@ public class DropboxFileProvider
     }
 
     @Override
-    public FileSystemConfigBuilder getConfigBuilder()
-    {
+    public FileSystemConfigBuilder getConfigBuilder() {
         return DropboxFileSystemConfigBuilder.getInstance();
     }
 
-    public Collection<Capability> getCapabilities()
-    {
+    public Collection<Capability> getCapabilities() {
         return capabilities;
     }
 }

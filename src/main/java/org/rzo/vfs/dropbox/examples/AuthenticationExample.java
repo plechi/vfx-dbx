@@ -12,7 +12,7 @@ public class AuthenticationExample
 {
 	public static void main(String[] args) throws Exception
 	{
-		DropboxAuthenticator auth = new DropboxAuthenticator("accessToken"); 
+		DropboxAuthenticator auth = new DropboxAuthenticator();
 		FileSystemOptions opts = new FileSystemOptions(); 
 		DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(opts, auth); 		
 		((DefaultFileSystemManager)VFS.getManager()).addProvider("dbx", new DropboxFileProvider());
