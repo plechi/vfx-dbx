@@ -3,8 +3,11 @@ package org.rzo.vfs.dropbox.auth;
 import com.dropbox.core.DbxAppInfo;
 import com.dropbox.core.DbxAuthInfo;
 import com.dropbox.core.DbxHost;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.UserAuthenticationData;
 import org.apache.commons.vfs2.UserAuthenticator;
+import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.util.UserAuthenticatorUtils;
 
 public class DropboxAuthenticator implements UserAuthenticator {
@@ -21,6 +24,10 @@ public class DropboxAuthenticator implements UserAuthenticator {
     }
 
     public DropboxAuthenticator() {
+    }
+
+    public DropboxAuthenticator(DbxAppInfo info){
+        this.setAppInfo(info);
     }
 
     public void setAuthInfo(DbxAuthInfo authInfo) {
@@ -48,5 +55,11 @@ public class DropboxAuthenticator implements UserAuthenticator {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public FileSystemOptions toOpts() throws FileSystemException {
+        FileSystemOptions opts = new FileSystemOptions();
+        DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(opts, this);
+        return opts;
     }
 }

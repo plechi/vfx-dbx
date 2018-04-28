@@ -1,13 +1,14 @@
 
 package org.rzo.vfs.dropbox;
 
+import com.dropbox.core.v2.files.FileMetadata;
 import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.rzo.vfs.dropbox.auth.DropboxAuthenticator;
 
 
-public class Main {
+public class  Main {
 
     public static void main(String[] args) throws FileSystemException {
 
@@ -20,7 +21,7 @@ public class Main {
 
 
         DropboxAuthenticator auth = new DropboxAuthenticator("e3zxow3ahnf0e1o", "k9uktv262lmnii1");
-        auth.setAccessToken("E3JJjCpDHIMAAAAAAAAaAM8uYL_ENzjykNNujZBeNp643o5RN4YLWldD3_Yt676X");
+        auth.setAccessToken("E3JJjCpDHIMAAAAAAAAaSr4ttl1ZhmHHj0ncVzYY3u0JnnAt_BtwyrlTWh5STMKy");
 
 
         FileSystemOptions opts = new FileSystemOptions();
@@ -38,9 +39,9 @@ public class Main {
             System.out.println(" - " + child.getName());
         }
 
-
-
-
+        FileObject textfile = mgr.resolveFile("dbx:///test.txt", opts);
+        FileMetadata meta = (FileMetadata) textfile.getContent().getAttribute("metadata");
+        System.out.println(meta.toStringMultiline());
 
         /*try {
             FileObject textfile = mgr.resolveFile("dbx:///test.txt", opts);

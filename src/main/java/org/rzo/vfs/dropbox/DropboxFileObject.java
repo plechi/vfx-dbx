@@ -33,10 +33,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * An dbx file.
@@ -505,5 +502,11 @@ public class DropboxFileObject extends AbstractFileObject {
             return "";
     }
 
+    @Override
+    protected Map<String, Object> doGetAttributes() throws Exception {
+        Map<String, Object> attrs=new HashMap<>();
+        attrs.put("metadata", this.fileInfo);
+        return attrs;
+    }
 
 }

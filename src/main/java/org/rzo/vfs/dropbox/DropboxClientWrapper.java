@@ -60,7 +60,7 @@ class DropboxClientWrapper implements DropboxClient {
     }
 
     private DbxClientV2 createClient() {
-        System.out.println("Create client");
+        //System.out.println("Create client");
         final LocalFileName rootName = getRoot();
 
         UserAuthenticationData authData = null;
@@ -71,7 +71,7 @@ class DropboxClientWrapper implements DropboxClient {
 
 
             if (token == null){
-                System.out.println("Token is null");
+                //System.out.println("Token is null");
                 return null;
             }
 
@@ -79,7 +79,7 @@ class DropboxClientWrapper implements DropboxClient {
             DbxRequestConfig config = DbxRequestConfig.newBuilder(DropboxClient.CLIENT_IDENTIFIER).withAutoRetryEnabled().build();
 
             DbxClientV2 client = new DbxClientV2(config, new String(token));
-            System.out.println("Client created"+client);
+            //System.out.println("Client created"+client);
             return client;
         }catch (Exception e){
             e.printStackTrace();
@@ -105,7 +105,7 @@ class DropboxClientWrapper implements DropboxClient {
         try {
             try {
                 //getDbxClient().disableAccessToken();
-                System.out.println("Disconnect client");
+                //System.out.println("Disconnect client");
             } catch (Exception e) {
                 throw new IOException(e);
             }
